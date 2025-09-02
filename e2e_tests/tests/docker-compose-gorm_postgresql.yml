@@ -1,0 +1,47 @@
+services:
+  app-test:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    image: app-test
+    container_name: app-test
+    restart: unless-stopped
+    environment:
+      DB: gorm_postgres
+      SERVER: ${SERVER}
+      IP: 0.0.0.0
+      DB_HOST: postgres-test
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: db
+    depends_on:
+      postgres:
+        condition: service_healthy
+  tester:
+    build:
+      context: ../..
+      dockerfile: ./e2e_tests/Dockerfile
+    image: tester
+    container_name: tester
+    environment:
+      TYPE: ${TESTER_SERVER}
+    depends_on:
+      - app-test
+  postgres:
+    image: postgres:17.6
+    container_name: postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user" ]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 2s
+volumes:
+  postgres:

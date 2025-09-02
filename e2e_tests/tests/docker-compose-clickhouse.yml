@@ -1,0 +1,49 @@
+services:
+  app-test:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    image: app-test
+    container_name: app-test
+    restart: unless-stopped
+    environment:
+      DB: clickhouse
+      SERVER: ${SERVER}
+      IP: 0.0.0.0
+      DB_HOST: clickhouse-test
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: db
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+  tester:
+    build:
+      context: ../..
+      dockerfile: ./e2e_tests/Dockerfile
+    image: tester
+    container_name: tester
+    environment:
+      TYPE: ${TESTER_SERVER}
+    depends_on:
+      - app-test
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.7
+    container_name: clickhouse-test
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: db
+      CLICKHOUSE_USER: user
+      CLICKHOUSE_PASSWORD: pass
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    healthcheck:
+      test: ["CMD-SHELL", "clickhouse-client --host=localhost --port=9000 --query='SELECT 1'"]
+      interval: 5s
+      timeout: 2s
+      retries: 5
+      start_period: 2s
+volumes:
+  clickhouse-data:
+  clickhouse-logs:

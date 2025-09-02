@@ -1,0 +1,27 @@
+services:
+  app-test:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    image: app-test
+    container_name: app-test
+    restart: unless-stopped
+    environment:
+      DB: sqlite
+      SERVER: ${SERVER}
+      STORAGE_PATH: /storage/db
+      IP: 0.0.0.0
+    volumes:
+      - storage:/storage
+  tester:
+    build:
+      context: ../..
+      dockerfile: ./e2e_tests/Dockerfile
+    image: tester
+    container_name: tester
+    environment:
+      TYPE: ${TESTER_SERVER}
+    depends_on:
+      - app-test
+volumes:
+  storage:

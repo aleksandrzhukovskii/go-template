@@ -1,0 +1,22 @@
+services:
+  app-test:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    image: app-test
+    container_name: app-test
+    restart: unless-stopped
+    environment:
+      DB: in_memory
+      SERVER: ${SERVER}
+      IP: 0.0.0.0
+  tester:
+    build:
+      context: ../..
+      dockerfile: ./e2e_tests/Dockerfile
+    image: tester
+    container_name: tester
+    environment:
+      TYPE: ${TESTER_SERVER}
+    depends_on:
+      - app-test

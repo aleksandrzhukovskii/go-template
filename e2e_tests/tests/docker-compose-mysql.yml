@@ -1,0 +1,48 @@
+services:
+  app-test:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    image: app-test
+    container_name: app-test
+    restart: unless-stopped
+    environment:
+      DB: mysql
+      SERVER: ${SERVER}
+      IP: 0.0.0.0
+      DB_HOST: mysql-test
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: db
+    depends_on:
+      mysql:
+        condition: service_healthy
+  tester:
+    build:
+      context: ../..
+      dockerfile: ./e2e_tests/Dockerfile
+    image: tester
+    container_name: tester
+    environment:
+      TYPE: ${TESTER_SERVER}
+    depends_on:
+      - app-test
+  mysql:
+    image: mysql:9.4
+    container_name: mysql-test
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: pass
+      MYSQL_DATABASE: db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    volumes:
+      - mysql:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uuser", "-ppass" ]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 1s
+volumes:
+  mysql:

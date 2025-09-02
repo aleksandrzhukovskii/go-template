@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+option go_package = "../internal/service/grpc";
+
+package template;
+
+service ProductService {
+  rpc GetMain (Empty) returns (MainInfo);
+  rpc AddProduct (Empty) returns (AddResponse);
+  rpc UpdateProduct (UpdateRequest) returns (UpdateResponse);
+  rpc DeleteProduct (DeleteRequest) returns (DeleteResponse);
+  rpc GetProduct (GetProductRequest) returns (Product);
+  rpc GetProducts (Empty) returns (Products);
+}
+
+// === Requests ===
+
+message Empty {}
+
+message UpdateRequest {
+  string id = 1;
+  optional string name = 2;
+  optional double price = 3;
+}
+
+message DeleteRequest {
+  string id = 1;
+}
+
+message GetProductRequest {
+  string id = 1;
+}
+
+// === Responses / Entities ===
+
+message MainInfo {
+  string info = 1;
+}
+
+message AddResponse {
+  string id = 1;
+}
+
+message UpdateResponse {
+  string msg = 1;
+}
+
+message DeleteResponse {
+  string msg = 1;
+}
+
+message Product {
+  string id = 1;
+  string name = 2;
+  double price = 3;
+  uint32 created_at = 4;
+}
+
+message Products {
+  repeated Product items = 1;
+}

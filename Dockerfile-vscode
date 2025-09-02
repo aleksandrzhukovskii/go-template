@@ -1,0 +1,47 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV USER=dev
+ENV PASSWORD=go-template
+ENV CODE_SERVER_PASSWORD=go-template
+ENV GO_VERSION=1.25.0
+
+RUN apt-get update && apt-get install -y --no-install-recommends ubuntu-keyring ca-certificates
+RUN apt-get update && apt-get install -y curl wget git openssh-server sudo ca-certificates
+
+RUN useradd -m -s /bin/bash $USER && echo "$USER:$PASSWORD" | chpasswd && adduser $USER sudo
+
+RUN mkdir /var/run/sshd
+RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+RUN echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config
+
+RUN ARCH=$(dpkg --print-architecture) && \
+    case "$ARCH" in \
+        amd64) GO_ARCH=linux-amd64 ;; \
+        arm64) GO_ARCH=linux-arm64 ;; \
+        *) echo "Unsupported architecture: $ARCH"; exit 1 ;; \
+    esac && \
+    wget https://go.dev/dl/go${GO_VERSION}.${GO_ARCH}.tar.gz -O /tmp/go.tar.gz && \
+    tar -C /usr/local -xzf /tmp/go.tar.gz && rm /tmp/go.tar.gz
+ENV PATH=$PATH:/usr/local/go/bin:/home/$USER/go/bin
+
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+
+RUN mkdir -p /home/$USER/.config/code-server && \
+    echo "auth: password\ncert: false\npassword: go-template\ndisable-update-check: true" > /home/$USER/.config/code-server/config.yaml && \
+    chown -R $USER:$USER /home/$USER/.config
+
+RUN mkdir -p /home/$USER/.local/share/code-server/User && \
+    echo '{ "security.workspace.trust.enabled": false, "gopls": { "formatting.gofumpt": true }  }' > /home/$USER/.local/share/code-server/User/settings.json && \
+    chown -R $USER:$USER /home/$USER/.local/share/code-server
+
+RUN su - $USER -c "code-server --install-extension golang.Go"
+RUN su - dev -c "/usr/local/go/bin/go install -v mvdan.cc/gofumpt@latest"
+RUN su - dev -c "/usr/local/go/bin/go install -v github.com/go-delve/delve/cmd/dlv@latest"
+
+
+EXPOSE 22 8080
+
+WORKDIR /home/$USER/go-template
+
+CMD service ssh start && su - $USER -c "code-server /home/dev/go-template --bind-addr 0.0.0.0:8080"

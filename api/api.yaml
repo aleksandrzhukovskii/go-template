@@ -1,0 +1,277 @@
+openapi: 3.1.0
+info:
+  title: Template api
+  version: 1.0.0
+servers:
+  - url: 'http://127.0.0.1:8000'
+    description: "local"
+paths:
+  /:
+    get:
+      summary: Returns information about the request, it can be not just get but any method
+      operationId: GetMain
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                Method: GET
+                URL: /swagger
+                Remote Addr: 127.0.0.1:51069
+                Headers:
+                  Cache-Control: max-age=0
+                  Sec-Ch-Ua-Platform: "macOS"
+                  User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
+                  Sec-Fetch-Mode: navigate
+                  Accept-Encoding: gzip, deflate, br, zstd
+                  Sec-Ch-Ua-Mobile: ?0
+                  Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+                  Upgrade-Insecure-Requests: 1
+                  Sec-Fetch-Dest: document
+                  Accept-Language: en-GB,en-US;q=0.9,en;q=0.8,ru;q=0.7
+                  Connection: keep-alive
+                  Sec-Ch-Ua: "Not(A:Brand";v="99", "Google Chrome";v="133", "Chromium";v="133"
+                  Sec-Fetch-Site: none
+                  Sec-Fetch-User: ?1
+                Swagger: http://127.0.0.1:8000/swagger
+        '500':
+          description: Failed to read body
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: |
+                Error while reading body
+  /add:
+    post:
+      summary: Adds new product
+      operationId: AddProduct
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/add"
+        '500':
+          $ref: "#/components/responses/db_issue"
+  /update:
+    put:
+      summary: Updates product
+      operationId: UpdateProduct
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/update_request"
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/update"
+        '400':
+          $ref: "#/components/responses/no_update"
+        '500':
+          $ref: "#/components/responses/db_issue"
+  /delete:
+    delete:
+      summary: Deletes product
+      operationId: DeleteProduct
+      parameters:
+        - name: id
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/delete"
+        '400':
+          description: Bad input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/no_delete"
+        '500':
+          $ref: "#/components/responses/db_issue"
+  /get:
+    get:
+      summary: Gets the product
+      operationId: GetProduct
+      parameters:
+        - name: id
+          required: true
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/product"
+        '400':
+          $ref: "#/components/responses/no_rows"
+        '500':
+          $ref: "#/components/responses/db_issue"
+  /get_all:
+    get:
+      summary: Gets products
+      operationId: GetProducts
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/products"
+        '500':
+          $ref: "#/components/responses/db_issue"
+
+components:
+  responses:
+    db_issue:
+      description: Internal error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/db_issue"
+    no_rows:
+      description: Bad input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/no_rows"
+    no_update:
+      description: Bad input
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/no_update"
+  schemas:
+    db_issue:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "error message"
+          example: "some db error"
+      required:
+        - error
+    no_rows:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "error message"
+          example: "no rows found"
+      required:
+        - error
+    no_update:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "error message"
+          example: "no rows updated"
+      required:
+        - error
+    no_delete:
+      type: object
+      properties:
+        error:
+          type: string
+          description: "error message"
+          example: "no rows deleted"
+      required:
+        - error
+    product:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "ID of product"
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          description: "Name of product"
+          example: "My product"
+        price:
+          type: number
+          format: double
+          description: "Price of product"
+          example: 99.99
+        created_at:
+          type: int
+          description: "Timestamp when product was added"
+          example: 1234567890
+      x-go-type: model.Product
+      x-go-type-import:
+        path: github.com/aleksandrzhukovskii/go-template/internal/model
+      required:
+        - id
+        - name
+        - price
+        - created_id
+    products:
+      type: array
+      items:
+        $ref: "#/components/schemas/product"
+    delete:
+      type: object
+      properties:
+        msg:
+          type: string
+          description: "response message"
+          example: "Product deleted"
+      required:
+        - msg
+    update:
+      type: object
+      properties:
+        msg:
+          type: string
+          description: "response message"
+          example: "Product updated"
+      required:
+        - msg
+    add:
+      type: object
+      properties:
+        id:
+          type: string
+          description: "New product id"
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      required:
+        - id
+    update_request:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID of product
+        name:
+          type: string
+          description: Name of product
+          minLength: 1
+        price:
+          type: number
+          format: double
+          description: Price of product
+          minimum: 1
+      required:
+        - id
+      anyOf:
+        - required: [ name ]
+        - required: [ price ]

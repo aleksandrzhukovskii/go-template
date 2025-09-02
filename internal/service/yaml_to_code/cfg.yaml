@@ -1,0 +1,6 @@
+package: yaml_to_code
+generate:
+  strict-server: true
+  std-http-server: true
+  models: true
+output: api.gen.go

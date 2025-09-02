@@ -1,0 +1,36 @@
+type Mutation {
+    addProduct: AddProductResponse!
+    updateProduct(id: String!, name: String, price: Float): MessageResponse!
+    deleteProduct(id: String!): MessageResponse!
+}
+
+type AddProductResponse {
+    id: String!
+}
+
+type MessageResponse{
+    msg: String!
+}
+
+type Query {
+    main: String!
+    getProduct(filter: ProductFilter!): Product!
+    getProducts: [Product!]!
+}
+
+type Product{
+    id: String!
+    name: String!
+    price: Float!
+    createdAt: UInt32!
+}
+
+scalar UInt32
+
+input ProductFilter{
+    id: String!
+}
+
+type Subscription {
+    time: UInt32!
+}

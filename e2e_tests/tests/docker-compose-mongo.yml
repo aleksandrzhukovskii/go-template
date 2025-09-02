@@ -1,0 +1,47 @@
+services:
+  app-test:
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    image: app-test
+    container_name: app-test
+    restart: unless-stopped
+    environment:
+      DB: mongo
+      SERVER: ${SERVER}
+      IP: 0.0.0.0
+      DB_HOST: mongo-test
+      DB_USER: user
+      DB_PASSWORD: pass
+      DB_NAME: db
+    depends_on:
+      mongo:
+        condition: service_healthy
+  tester:
+    build:
+      context: ../..
+      dockerfile: ./e2e_tests/Dockerfile
+    image: tester
+    container_name: tester
+    environment:
+      TYPE: ${TESTER_SERVER}
+    depends_on:
+      - app-test
+  mongo:
+    image: mongo:8.0.13
+    restart: unless-stopped
+    container_name: mongo-test
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: pass
+      MONGO_INITDB_DATABASE: db
+    volumes:
+      - mongo:/data/db
+    healthcheck:
+      test: ["CMD","mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+      start_period: 2s
+volumes:
+  mongo:
