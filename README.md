@@ -1,0 +1,1 @@
+# Just a template for a go project
